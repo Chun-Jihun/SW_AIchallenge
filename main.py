@@ -57,7 +57,10 @@ def embed_file(file_path):
         chunk_size=2000,
         chunk_overlap=500,
     )
-    loader = UnstructuredLoader(file_path)
+    if file_path[-3:] == 'txt':
+        loader = TextLoader(file_path)
+    else:
+        loader = PyPDFLoader(file_path)
     docs = loader.load_and_split(text_splitter=splitter)
     embeddings = OpenAIEmbeddings()
     cached_embeddings = CacheBackedEmbeddings.from_bytes_store(embeddings, cache_dir)
@@ -71,7 +74,7 @@ def csv_files_to_json(file_paths, encoding='cp949'):
     # Initialize a default dictionary to store dictionaries for each ID
     json_data = defaultdict(lambda: defaultdict(list))
 
-    # Iterate through each CSV file
+    # Iterate through each CSV files
     for file_path in file_paths:
         # Extract the file name without extension to use as a key
         file_key = file_path.split('/')[-1].split('.')[0]
@@ -376,7 +379,7 @@ if user_id != '-1':
         #추천운동 출력
         elif menu == 2:
             print('------------------------------------------')
-            loader = UnstructuredLoader('data/docs/exercise.pdf')
+            loader = PyPDFLoader('data/docs/exercise.pdf')
 
             # The splitter can also output documents
             docs = loader.load_and_split(text_splitter=splitter)
@@ -437,7 +440,7 @@ if user_id != '-1':
         #식단관리방법 출력
         elif menu == 3:
             print('------------------------------------------')
-            loader = UnstructuredLoader('data/docs/recipe.pdf')
+            loader = PyPDFLoader('data/docs/recipe.pdf')
 
             # The splitter can also output documents
             docs = loader.load_and_split(text_splitter=splitter)
