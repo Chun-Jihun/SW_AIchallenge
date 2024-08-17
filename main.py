@@ -1,6 +1,45 @@
+import openai
+import os
+import pandas as pd
+import time
+from dotenv import load_dotenv
+from langchain_community.document_loaders import UnstructuredFileLoader
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnablePassthrough
+from langchain_community.vectorstores import FAISS
+from langchain_community.document_loaders.csv_loader import CSVLoader
+from langchain_openai import ChatOpenAI
+from langchain_openai import OpenAIEmbeddings
 from collections import defaultdict
 import json
-import pandas as pd
+from langchain_text_splitters import RecursiveJsonSplitter, CharacterTextSplitter
+from langchain_unstructured import UnstructuredLoader
+import logging
+
+# 로거의 레벨을 WARNING 이상으로 설정 (INFO 메시지를 출력하지 않도록 함)
+logger = logging.getLogger('pikepdf')
+logger.setLevel(logging.WARNING)
+logger = logging.getLogger("Assitant")
+logging.getLogger("openai").setLevel(logging.ERROR)
+logging.getLogger("httpx").setLevel(logging.ERROR)
+
+#api키 불러오기
+load_dotenv()
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+
+#임베딩함수 초기화
+embedding_function = OpenAIEmbeddings()
+
+#llm모델 초기화
+llm = ChatOpenAI(model='gpt-4o-mini', temperature=0.0)
+
+#splitter 초기화
+splitter = CharacterTextSplitter.from_tiktoken_encoder(
+        separator="\n",
+        chunk_size=2000,
+        chunk_overlap=500,
+    )
 
 #csv파일 json형식으로 불러오는 함수
 def csv_files_to_json(file_paths, encoding='cp949'):
@@ -54,7 +93,18 @@ if user_id != '-1':
     menu = 0
     while(True):
         # 검색하고 싶은 user_id에 따른 데이터 가져오기
-        data = json_str[user_id]
+        patient_data = json_str[user_id]
+
+        # 딕셔너리인 patient_data를 JSON 문자열로 변환
+        patient_data_str = json.dumps(patient_data, ensure_ascii=False, indent=4)
+
+        # 변환된 JSON 문자열을 splitter로 나눔
+        patient_docs = splitter.create_documents(texts=[patient_data_str])
+
+        # 벡터스토어 생성
+        patient_vectorstore = FAISS.from_documents(patient_docs, embedding_function)
+        # retriever
+        patient_retriever = patient_vectorstore.as_retriever()
 
         #메뉴 출력
         print('1. 건강정보\n2. 추천운동\n3. 식단관리\n4. 환자ID 재검색\n5. 종료')
@@ -73,13 +123,83 @@ if user_id != '-1':
         #추천운동 출력
         elif menu == 2:
             print('------------------------------------------')
-            print('추천운동 출력')
+            loader = UnstructuredLoader('data/docs/exercise.pdf')
+
+            # The splitter can also output documents
+            docs = loader.load_and_split(text_splitter=splitter)
+
+            # 벡터스토어 생성
+            exercise_vectorstore = FAISS.from_documents(docs, embedding_function)
+            # retriever
+            exercise_retriever = exercise_vectorstore.as_retriever()
+            exercise_prompt = ChatPromptTemplate.from_messages(
+                [
+                    (
+                        "system",
+                        """
+                        당신은 전문적인 의사이며 주어진 환자 정보를 토대로 추천하는 운동에 대해 친절하고 정확하게 설명해야한다. 추천하는 운동은 주어지는 문서의 내용을 참조한다. 환자의 생체 신호가 시간에 따른 변화에서 유의미한 정보가 있다면 참고하며 없는 내용이거나 잘 모르는 내용을 생성하지않는다.
+                        --------
+                        환자 정보 : 
+                        {patient_info}
+
+                        문서 : 
+                        {exercise}
+                        """,
+                    ),
+                    ("human", "{question}")
+                ]
+            )
+
+            exercise_chain = (
+                    {"patient_info": patient_retriever, "exercise": exercise_retriever, "question": RunnablePassthrough()}
+                    | exercise_prompt
+                    | llm
+                    | StrOutputParser()
+            )
+
+            exercise_response = exercise_chain.invoke('추천하는 운동을 간략하게 정리해')
+            print(exercise_response)
             print('------------------------------------------')
 
         #식단관리방법 출력
         elif menu == 3:
             print('------------------------------------------')
-            print('식단관리방법 출력')
+            loader = UnstructuredLoader('data/docs/recipe.pdf')
+
+            # The splitter can also output documents
+            docs = loader.load_and_split(text_splitter=splitter)
+
+            # 벡터스토어 생성
+            recipe_vectorstore = FAISS.from_documents(docs, embedding_function)
+            # retriever
+            recipe_retriever = recipe_vectorstore.as_retriever()
+            recipe_prompt = ChatPromptTemplate.from_messages(
+                [
+                    (
+                        "system",
+                        """
+                        당신은 전문적인 의사이며 주어진 환자 정보를 토대로 식단을 관리하는 방법에 대해 친절하고 정확하게 설명해야한다. 식단을 관리하는 방법은 주어지는 문서의 내용을 참조한다. 환자의 생체 신호가 시간에 따른 변화에서 유의미한 정보가 있다면 참고하며 없는 내용이거나 잘 모르는 내용을 생성하지않는다.
+                        --------
+                        환자 정보 : 
+                        {patient_info}
+                        
+                        문서 : 
+                        {recipe}
+                        """,
+                    ),
+                    ("human", "{question}")
+                ]
+            )
+
+            recipe_chain = (
+                    {"patient_info": patient_retriever,"recipe" : recipe_retriever, "question": RunnablePassthrough()}
+                    | recipe_prompt
+                    | llm
+                    | StrOutputParser()
+            )
+
+            recipe_response = recipe_chain.invoke('식단을 추천해서 간략하게 정리해')
+            print(recipe_response)
             print('------------------------------------------')
 
         #환자ID재검색
