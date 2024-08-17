@@ -68,6 +68,8 @@ def embed_file(file_path):
     retriever = vectorstore.as_retriever()
     return retriever
 
+def format_docs(docs):
+    return "\n\n".join(document.page_content for document in docs)
 
 #csv파일 json형식으로 불러오는 함수
 def csv_files_to_json(file_paths, encoding='cp949'):
@@ -115,24 +117,27 @@ def DM_response(patient_data):
 
     DM_prompt = ChatPromptTemplate.from_messages([
         ("system",
-         """
-         너는 당뇨병 전문 의사야.
-         환자의 정보들을 기반으로 당뇨병에 대한 환자의 건강상태에 대해서 말해 가족 중에 당뇨병이 있는 사람도 있고 없는 사람도 있으니 해당 정보도 유심히 봐야 해.
-         내가 주는 docs 파일을 기반으로 이 환자에 특화적인 조언도 추가 해
-         이를 기반으로 아래처럼 말해라.
-         예시) ~ 환자는 가족 중에 당뇨병에 대한 이력이 ~ 하고 현재 환자는 당뇨병이 ~ 한 상태이다.
-         -------
-         docs : 
-         {DMdocs}
-         """
+        """
+        As a medical expert, your task is to provide a focused analysis of the patient’s health information specifically related to diabetes. The analysis should be concise and meet the following criteria:
+
+        Diabetes Status Analysis: Provide a brief and focused analysis of the patient's diabetes status, summarizing key findings without directly mentioning specific dates or individual data points.
+
+        Key Diabetes-Related Issues and Concerns: Identify major concerns related to the patient's diabetes management, without referencing personal data directly. Focus on general trends or risks based on the analysis.
+
+        ENSURE that all information is strictly related to diabetes, with no inclusion of precautions, considerations, recommendations, or conclusions.
+        PLEASE SPEAK KOREAN
+        -------
+        docs : 
+        {DMdocs}
+        """
          ),
         ("human", "{patient_info}")
     ])
 
     final_chain = (
             {
-                "DMdocs": DMretriever,
-                "patient_info": patient_data,
+                "DMdocs": DMretriever | RunnableLambda(format_docs),
+                "patient_info": RunnablePassthrough()
             }
             | DM_prompt
             | llm
@@ -140,7 +145,7 @@ def DM_response(patient_data):
     )
 
     print('당뇨 분석 중...')
-    response = final_chain.invoke('당뇨 분석')
+    response = final_chain.invoke(patient_data)
     return response
 
 def HBP_response(patient_data):
@@ -148,24 +153,27 @@ def HBP_response(patient_data):
 
     HBP_prompt = ChatPromptTemplate.from_messages([
         ("system",
-         """
-         너는 고혈압 전문 의사야.
-         환자의 정보들을 기반으로 고혈압에 대한 환자의 건강상태에 대해서 말해 가족 중에 고혈압이 있는 사람도 있고 없는 사람도 있으니 해당 정보도 유심히 봐야 해.
-         내가 주는 docs 파일을 기반으로 이 환자에 특화적인 조언도 추가 해
-         이를 기반으로 아래처럼 말해라.
-         예시) ~ 환자는 가족 중에 고혈압에 대한 이력이 ~ 하고 현재 환자는 고혈압이 ~ 한 상태이다.
-         -------
-         docs : 
-         {HBPdocs}
-         """
-         ),
+        """
+        As a medical expert, your task is to provide a focused analysis of the patient’s health information specifically related to hypertension. The analysis should be concise and meet the following criteria:
+
+        Hypertension Status Analysis: Summarize the patient’s current blood pressure status, highlighting key findings without directly mentioning specific dates or individual data points.
+
+        Key Hypertension-Related Issues and Concerns: Identify major concerns related to the patient’s blood pressure management, focusing on general trends or risks based on the analysis.
+
+        ENSURE that the analysis is strictly related to hypertension, with no inclusion of precautions, considerations, recommendations, or conclusions.
+        PLEASE SPEAK KOREAN
+        -------
+        docs : 
+        {HBPdocs}
+        """
+        ),
         ("human", "{patient_info}")
     ])
 
     final_chain = (
             {
-                "HBPdocs": HBPretriever,
-                "patient_info": patient_data,
+                "HBPdocs": HBPretriever | RunnableLambda(format_docs),
+                "patient_info": RunnablePassthrough(),
             }
             | HBP_prompt
             | llm
@@ -173,7 +181,7 @@ def HBP_response(patient_data):
     )
 
     print('고혈압 분석 중...')
-    response = final_chain.invoke('고혈압 분석')
+    response = final_chain.invoke(patient_data)
     return response
 
 def HD_response(patient_data):
@@ -189,24 +197,27 @@ def HD_response(patient_data):
 
     HD_prompt = ChatPromptTemplate.from_messages([
         ("system",
-         """
-         너는 심장질환 전문 의사야.
-         환자의 정보들을 기반으로 심장질환에 대한 환자의 건강상태에 대해서 말해 가족 중에 심장질환이 있는 사람도 있고 없는 사람도 있으니 해당 정보도 유심히 봐야 해.
-         내가 주는 docs 파일을 기반으로 이 환자에 특화적인 조언도 추가 해
-         이를 기반으로 아래처럼 말해라.
-         예시) ~ 환자는 가족 중에 심장질환에 대한 이력이 ~ 하고 현재 환자는 심장질환이 ~ 한 상태이다.
-         -------
-         docs : 
-         {HDdocs}
-         """
-         ),
+        """
+        As a medical expert, your task is to provide a focused analysis of the patient’s health information specifically related to heart disease. The analysis should be concise and meet the following criteria:
+
+        Heart Disease Status Analysis: Summarize the patient’s current heart disease status, highlighting key findings without directly mentioning specific dates or individual data points.
+
+        Key Heart Disease-Related Issues and Concerns: Identify major concerns related to the patient’s heart disease management, focusing on general trends or risks based on the analysis.
+
+        ENSURE that the analysis is strictly related to heart disease, with no inclusion of precautions, considerations, recommendations, or conclusions.
+        PLEASE SPEAK KOREAN
+        -------
+        docs : 
+        {HDdocs}
+        """
+        ),
         ("human", "{patient_info}")
     ])
 
     final_chain = (
             {
-                "HDdocs": HDretriever,
-                "patient_info": patient_data,
+                "HDdocs": HDretriever | RunnableLambda(format_docs),
+                "patient_info": RunnablePassthrough(),
             }
             | HD_prompt
             | llm
@@ -214,7 +225,7 @@ def HD_response(patient_data):
     )
 
     print('심장질환 분석 중...')
-    response = final_chain.invoke('심장질환 분석')
+    response = final_chain.invoke(patient_data)
     return response
 
 def Cancer_response(patient_data):
@@ -222,25 +233,27 @@ def Cancer_response(patient_data):
 
     Cancer_prompt = ChatPromptTemplate.from_messages([
         ("system",
-         """
-         너는 암 전문 의사야.
-         환자의 정보들을 기반으로 암에 대한 환자의 건강상태에 대해서 말해 가족 중에 암이 있는 사람도 있고 없는 사람도 있으니 해당 정보도 유심히 봐야 해.
-         내가 주는 docs 파일을 기반으로 이 환자에 특화적인 조언도 추가 해.
-         암 관련 얘기만 해라.
-         이를 기반으로 아래처럼 말해라.
-         예시) ~ 환자는 가족 중에 암에 대한 이력이 ~ 하고 현재 환자는 암이 ~ 한 상태이다.
-         -------
-         docs : 
-         {Cancerdocs}
-         """
-         ),
+        """
+        As a medical expert, your task is to provide a focused analysis of the patient’s health information specifically related to cancer. The analysis should be concise and meet the following criteria:
+
+        Cancer Status Analysis: Provide a brief and focused analysis of the patient’s current cancer status, summarizing key findings without directly mentioning specific dates or individual data points.
+
+        Key Cancer-Related Issues and Concerns: Identify major concerns related to the patient’s cancer management, without referencing personal data directly. Focus on general trends or risks based on the analysis.
+
+        ENSURE that all information is strictly related to cancer, with no inclusion of precautions, considerations, recommendations, or conclusions.
+        PLEASE SPEAK KOREAN
+        -------
+        docs : 
+        {Cancerdocs}
+        """
+        ),
         ("human", "{patient_info}")
     ])
 
     final_chain = (
             {
-                "Cancerdocs": Cancerretriever,
-                "patient_info": patient_data,
+                "Cancerdocs": Cancerretriever | RunnableLambda(format_docs),
+                "patient_info": RunnablePassthrough(),
             }
             | Cancer_prompt
             | llm
@@ -248,7 +261,7 @@ def Cancer_response(patient_data):
     )
 
     print('암 분석 중...')
-    response = final_chain.invoke('암 분석')
+    response = final_chain.invoke(patient_data)
     return response
 
 #csv읽어오기
@@ -264,49 +277,23 @@ user_id = input_user_id()
 
 #종료가 아니라면 기능 출력
 if user_id != '-1':
-    #메뉴 변수 초기화
-    menu = 0
-    #처음 실행 확인
-    first = True
+    menu = 4
     while(True):
-        if first or menu == 4:
+        if menu == 4:
             # 검색하고 싶은 user_id에 따른 데이터 가져오기
             patient_data = json_str[user_id]
+            age = 2024 - patient_data['patients'][0]['출생년도']
+            patient_data['patients'][0]['나이'] = age
 
-            # 딕셔너리인 patient_data를 JSON 문자열로 변환
-            patient_data_str = json.dumps(patient_data, ensure_ascii=False, indent=4)
+            dm_response = DM_response(str(patient_data))
+            hbp_response = HBP_response(str(patient_data))
+            hd_response = HD_response(str(patient_data))
+            cancer_response = Cancer_response(str(patient_data))
 
-            # 변환된 JSON 문자열을 splitter로 나눔
-            patient_docs = splitter.create_documents(texts=[patient_data_str])
-
-            # 벡터스토어 생성
-            patient_vectorstore = FAISS.from_documents(patient_docs, embedding_function)
-            # retriever
-            patient_retriever = patient_vectorstore.as_retriever()
-            dm_response = DM_response(patient_retriever)
-            hbp_response = HBP_response(patient_retriever)
-            hd_response = HD_response(patient_retriever)
-            cancer_response = Cancer_response(patient_retriever)
-
-            # 나이대 계산
-            age = 2024 - json_str[user_id]['patients'][0]['출생년도']
-            gender = json_str[user_id]['patients'][0]['성별']
-
-            if age <= 14:
-                age_range = '청소년'
-            elif age <= 24:
-                age_range = '청년전기'
-            elif age <= 39:
-                age_range = '청년후기'
-            elif age <= 54:
-                age_range = '중년전기'
-            elif age <= 64:
-                age_range = '중년후기'
-            elif age <= 74:
-                age_range = '노년전기'
-            else:
-                age_range = '노년후기'
-
+            patient_data['patients'][0]['당뇨 분석 결과'] = dm_response
+            patient_data['patients'][0]['고혈압 분석 결과'] = hbp_response
+            patient_data['patients'][0]['심장질환 분석 결과'] = hd_response
+            patient_data['patients'][0]['암 분석 결과'] = cancer_response
 
         #메뉴 출력
         print('------------------------------------------')
@@ -320,7 +307,8 @@ if user_id != '-1':
         #건강정보 출력
         if menu == 1:
             print('------------------------------------------')
-            act_query = f"""
+
+            system_message = f"""
                 As a medical expert, your task is to provide a comprehensive analysis of the patient’s health information, including important considerations based on the patient's age, gender, age group, medical conditions, lifestyle factors, and other relevant health data. Using the provided context, your goal is to:
     
                 Thoroughly analyze the patient's health status.
@@ -333,45 +321,23 @@ if user_id != '-1':
                 --------
             """
 
-            base_info = f"""
-                Patient's base info :
-                Age : {age}
-                Gender : {gender}
-                Age Range : {age_range}
-            """
-
-            condition_query = f"""
-                Patient's diabetes condition :
-                {dm_response}
-                Patient's heart disease condition :
-                {hd_response}
-                Patient's hypertension condition :
-                {hbp_response} 
-                Patient's cancer condition :
-                {cancer_response}
-            """
-
-            total_query = act_query + base_info + condition_query
-
-
             total_prompt = ChatPromptTemplate.from_messages(
                 [
                     (
                         "system",
-                        total_query,
+                        system_message,
                     ),
                     ("human", "{patient_info}")
                 ]
             )
 
             total_chain = (
-                    {"patient_info": patient_retriever}
-                    | total_prompt
+                    total_prompt
                     | llm
                     | StrOutputParser()
             )
             print("종합 소견 출력 중...")
-            total_response = total_chain.invoke("건강정보에 대한 종합적인 소견을 간략하게 정리해")
+            total_response = total_chain.invoke({"patient_info": str(patient_data)})
             print(total_response)
             print('------------------------------------------')
             first = False
@@ -389,50 +355,43 @@ if user_id != '-1':
             # retriever
             exercise_retriever = exercise_vectorstore.as_retriever()
 
-            exercise_query = """
-                        As a medical expert, your task is to provide tailored exercise recommendations, including important precautions, based on the patient's medical conditions, fitness level, lifestyle factors, and other relevant health data.
-                        Using the provided context, your goal is to:
-                        Analyze the patient's condition comprehensively.
-                        Recommend appropriate exercises tailored to the patient's needs.
-                        Highlight important precautions and considerations during exercise to ensure safety and effectiveness.
-                        Each recommendation and precaution should be supported by clear explanations, referencing clinical guidelines or research when applicable. If there is insufficient information, acknowledge this and suggest a method for the patient to obtain the necessary details, such as consulting with a healthcare provider.
+            system_message = """
+                As a medical expert, your task is to provide tailored exercise recommendations, including important precautions, based on the patient's medical conditions, fitness level, lifestyle factors, and other relevant health data.
+                Using the provided context, your goal is to:
+                Analyze the patient's condition comprehensively.
+                Recommend appropriate exercises tailored to the patient's needs.
+                Highlight important precautions and considerations during exercise to ensure safety and effectiveness.
+                Each recommendation and precaution should be supported by clear explanations, referencing clinical guidelines or research when applicable. If there is insufficient information, acknowledge this and suggest a method for the patient to obtain the necessary details, such as consulting with a healthcare provider.
 
-                        Do not include personal opinions, speculative advice, or unsupported claims in your responses. Your role is to deliver expert, evidence-based exercise recommendations and safety guidelines tailored to the patient's unique health needs.
-                        PLEASE SPEAK KOREAN
-                        --------
-                        exercise document : 
-                        {exercise}
+                Do not include personal opinions, speculative advice, or unsupported claims in your responses. Your role is to deliver expert, evidence-based exercise recommendations and safety guidelines tailored to the patient's unique health needs.
+                PLEASE SPEAK KOREAN
+                --------
+                exercise document : 
+                {exercise}
                         
-                        """
-            exercise_query += f"""
-                Patient's diabetes condition :
-                {dm_response}
-                patient's heart disease condition :
-                {hd_response}
-                patient's hypertension condition :
-                {hbp_response} 
-                patient's cancer condition :
-                {cancer_response}
             """
 
             exercise_prompt = ChatPromptTemplate.from_messages(
                 [
                     (
                         "system",
-                        exercise_query,
+                        system_message,
                     ),
                     ("human", "{patient_info}")
                 ]
             )
 
             exercise_chain = (
-                    {"exercise": exercise_retriever, "patient_info": patient_retriever}
+                    {
+                        "exercise": exercise_retriever | RunnableLambda(format_docs),
+                        "patient_info": RunnablePassthrough()
+                        }
                     | exercise_prompt
                     | llm
                     | StrOutputParser()
             )
             print("추천 운동 검색 중...")
-            exercise_response = exercise_chain.invoke("추천 운동을 간략하게 정리해")
+            exercise_response = exercise_chain.invoke(str(patient_data))
             print(exercise_response)
             print('------------------------------------------')
             first = False
@@ -450,50 +409,43 @@ if user_id != '-1':
             # retriever
             recipe_retriever = recipe_vectorstore.as_retriever()
 
-            recipe_query = """
-                        As a medical expert, your task is to provide tailored dietary recommendations based on the patient's medical conditions, nutritional needs, lifestyle factors, and other relevant health data. Using the provided context, your goal is to:
+            system_message = """
+                As a medical expert, your task is to provide tailored dietary recommendations based on the patient's medical conditions, nutritional needs, lifestyle factors, and other relevant health data. Using the provided context, your goal is to:
 
-                        Comprehensively analyze the patient's condition.
-                        Recommend an appropriate diet plan tailored to the patient's needs.
-                        Highlight important precautions and considerations related to diet to ensure safety and effectiveness.
-                        Each recommendation and precaution should be supported by clear explanations, referencing clinical guidelines or research when applicable. If there is insufficient information, acknowledge this and suggest a method for the patient to obtain the necessary details, such as consulting with a healthcare provider or a registered dietitian.
+                Comprehensively analyze the patient's condition.
+                Recommend an appropriate diet plan tailored to the patient's needs.
+                Highlight important precautions and considerations related to diet to ensure safety and effectiveness.
+                Each recommendation and precaution should be supported by clear explanations, referencing clinical guidelines or research when applicable. If there is insufficient information, acknowledge this and suggest a method for the patient to obtain the necessary details, such as consulting with a healthcare provider or a registered dietitian.
 
-                        Do not include personal opinions, speculative advice, or unsupported claims in your responses. Your role is to deliver expert, evidence-based dietary recommendations and safety guidelines tailored to the patient's unique health needs.
-                        PLEASE SPEAK KOREAN
-                        --------
-                        recipe document : 
-                        {recipe}
-                        """
-            recipe_query += f"""
-                            Patient's diabetes condition :
-                            {dm_response}
-                            patient's heart disease condition :
-                            {hd_response}
-                            patient's hypertension condition :
-                            {hbp_response} 
-                            patient's cancer condition :
-                            {cancer_response}
-                        """
+                Do not include personal opinions, speculative advice, or unsupported claims in your responses. Your role is to deliver expert, evidence-based dietary recommendations and safety guidelines tailored to the patient's unique health needs.
+                PLEASE SPEAK KOREAN
+                --------
+                recipe document : 
+                {recipe}
+            """
 
             recipe_prompt = ChatPromptTemplate.from_messages(
                 [
                     (
                         "system",
-                        recipe_query,
+                        system_message,
                     ),
                     ("human", "{patient_info}")
                 ]
             )
 
             recipe_chain = (
-                    {"recipe" : recipe_retriever, "patient_info": patient_retriever}
+                    {
+                        "recipe" : recipe_retriever | format_docs,
+                        "patient_info": RunnablePassthrough()
+                        }
                     | recipe_prompt
                     | llm
                     | StrOutputParser()
             )
 
             print('추천 식단 검색 중...')
-            recipe_response = recipe_chain.invoke('추천 식단 관리 ')
+            recipe_response = recipe_chain.invoke(str(patient_data))
             print(recipe_response)
             print('------------------------------------------')
             first = False
