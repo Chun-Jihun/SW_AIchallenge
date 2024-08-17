@@ -9,6 +9,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough, RunnableLambda
 from langchain_community.vectorstores import FAISS
 from langchain_community.document_loaders.csv_loader import CSVLoader
+from langchain_community.document_loaders import PyPDFLoader
 from langchain_openai import ChatOpenAI
 from langchain_openai import OpenAIEmbeddings
 from collections import defaultdict
@@ -324,7 +325,7 @@ if user_id != '-1':
         #추천운동 출력
         elif menu == 2:
             print('------------------------------------------')
-            loader = UnstructuredLoader('data/docs/exercise.pdf')
+            loader = PyPDFLoader('./data/docs/exercise.pdf')
 
             # The splitter can also output documents
             docs = loader.load_and_split(text_splitter=splitter)
@@ -385,7 +386,7 @@ if user_id != '-1':
         #식단관리방법 출력
         elif menu == 3:
             print('------------------------------------------')
-            loader = UnstructuredLoader('data/docs/recipe.pdf')
+            loader = PyPDFLoader('data/docs/recipe.pdf')
 
             # The splitter can also output documents
             docs = loader.load_and_split(text_splitter=splitter)
