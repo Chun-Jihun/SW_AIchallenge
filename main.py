@@ -9,12 +9,15 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough, RunnableLambda
 from langchain_community.vectorstores import FAISS
 from langchain_community.document_loaders.csv_loader import CSVLoader
-from langchain_openai import ChatOpenAI
-from langchain_openai import OpenAIEmbeddings
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain.embeddings import CacheBackedEmbeddings
 from collections import defaultdict
 import json
 from langchain_text_splitters import RecursiveJsonSplitter, CharacterTextSplitter
 from langchain_unstructured import UnstructuredLoader
+from langchain.storage import LocalFileStore
+# from langchain.globals import set_llm_cache
+# from langchain_community.cache import InMemoryCache
 import logging
 
 # 로거의 레벨을 WARNING 이상으로 설정 (INFO 메시지를 출력하지 않도록 함)
@@ -28,6 +31,9 @@ logging.getLogger("httpx").setLevel(logging.ERROR)
 load_dotenv()
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
+# SQLite Cache 초기화
+# set_llm_cache(InMemoryCache())
+
 #임베딩함수 초기화
 embedding_function = OpenAIEmbeddings()
 
@@ -40,6 +46,25 @@ splitter = CharacterTextSplitter.from_tiktoken_encoder(
         chunk_size=2000,
         chunk_overlap=500,
     )
+
+# @st.cache_data(show_spinner="Embedding file...")
+def embed_file(file_path):
+    with open(file_path, "rb") as f:
+        file_content = f.read()
+    cache_dir = LocalFileStore(f"./.cache/embeddings/{file_path}")
+    splitter = CharacterTextSplitter.from_tiktoken_encoder(
+        separator="\n",
+        chunk_size=2000,
+        chunk_overlap=500,
+    )
+    loader = UnstructuredLoader(file_path)
+    docs = loader.load_and_split(text_splitter=splitter)
+    embeddings = OpenAIEmbeddings()
+    cached_embeddings = CacheBackedEmbeddings.from_bytes_store(embeddings, cache_dir)
+    vectorstore = FAISS.from_documents(docs, cached_embeddings)
+    retriever = vectorstore.as_retriever()
+    return retriever
+
 
 #csv파일 json형식으로 불러오는 함수
 def csv_files_to_json(file_paths, encoding='cp949'):
@@ -83,10 +108,7 @@ def format_docs(docs):
     return "\n\n".join(document.page_content for document in docs)
 
 def DM_response(patient_data):
-    DMdoc_loader = PyPDFLoader("./data/docs/당뇨병_가이드라인.pdf")
-    DMdocs = DMdoc_loader.load_and_split(text_splitter=splitter)
-    DMvectorstore = FAISS.from_documents(DMdocs, embedding_function)
-    DMretriever = DMvectorstore.as_retriever()
+    DMretriever = embed_file("./data/docs/당뇨병_가이드라인.pdf")
 
     DM_prompt = ChatPromptTemplate.from_messages([
         ("system",
@@ -119,10 +141,7 @@ def DM_response(patient_data):
     return response
 
 def HBP_response(patient_data):
-    HBPdoc_loader = PyPDFLoader("./data/docs/고혈압_가이드라인.pdf")
-    HBPdocs = HBPdoc_loader.load_and_split(text_splitter=splitter)
-    HBPvectorstore = FAISS.from_documents(HBPdocs, embedding_function)
-    HBPretriever = HBPvectorstore.as_retriever()
+    HBPretriever = embed_file("./data/docs/고혈압_가이드라인.pdf")
 
     HBP_prompt = ChatPromptTemplate.from_messages([
         ("system",
@@ -155,15 +174,15 @@ def HBP_response(patient_data):
     return response
 
 def HD_response(patient_data):
-    HDdoc_loader_1 = PyPDFLoader("./data/docs/심부전_가이드라인.pdf")
-    HDdocs_1 = HDdoc_loader_1.load_and_split(text_splitter=splitter)
-
-    HDdoc_loader_2 = PyPDFLoader("./data/docs/심장질환_가이드라인.pdf")
-    HDdocs_2 = HDdoc_loader_2.load_and_split(text_splitter=splitter)
-
-    HDdocs = HDdocs_1 + HDdocs_2
-    HDvectorstore = FAISS.from_documents(HDdocs, embedding_function)
-    HDretriever = HDvectorstore.as_retriever()
+    # HDdoc_loader_1 = PyPDFLoader("./data/docs/심부전_가이드라인.pdf")
+    # HDdocs_1 = HDdoc_loader_1.load_and_split(text_splitter=splitter)
+    #
+    # HDdoc_loader_2 = PyPDFLoader("./data/docs/심장질환_가이드라인.pdf")
+    # HDdocs_2 = HDdoc_loader_2.load_and_split(text_splitter=splitter)
+    #
+    # HDdocs = HDdocs_1 + HDdocs_2
+    # HDvectorstore = FAISS.from_documents(HDdocs, embedding_function)
+    HDretriever = embed_file("./data/docs/심장_가이드라인.pdf")
 
     HD_prompt = ChatPromptTemplate.from_messages([
         ("system",
@@ -196,10 +215,7 @@ def HD_response(patient_data):
     return response
 
 def Cancer_response(patient_data):
-    Cancerdoc_loader = TextLoader("./data/docs/암_지침서.txt")
-    Cancerdocs = Cancerdoc_loader.load_and_split(text_splitter=splitter)
-    Cancervectorstore = FAISS.from_documents(Cancerdocs, embedding_function)
-    Cancerretriever = Cancervectorstore.as_retriever()
+    Cancerretriever = embed_file("./data/docs/암_지침서.txt")
 
     Cancer_prompt = ChatPromptTemplate.from_messages([
         ("system",
@@ -240,6 +256,9 @@ json_str = json.loads(json_str)
 #검색하고싶은 user_id 입력
 user_id = input_user_id()
 
+
+
+
 #종료가 아니라면 기능 출력
 if user_id != '-1':
     #메뉴 변수 초기화
@@ -266,6 +285,26 @@ if user_id != '-1':
             hd_response = HD_response(patient_retriever)
             cancer_response = Cancer_response(patient_retriever)
 
+            # 나이대 계산
+            age = 2024 - json_str[user_id]['patients'][0]['출생년도']
+            gender = json_str[user_id]['patients'][0]['성별']
+
+            if age <= 14:
+                age_range = '청소년'
+            elif age <= 24:
+                age_range = '청년전기'
+            elif age <= 39:
+                age_range = '청년후기'
+            elif age <= 54:
+                age_range = '중년전기'
+            elif age <= 64:
+                age_range = '중년후기'
+            elif age <= 74:
+                age_range = '노년전기'
+            else:
+                age_range = '노년후기'
+
+
         #메뉴 출력
         print('------------------------------------------')
         print('1. 건강정보\n2. 추천운동\n3. 식단관리\n4. 환자ID 재검색\n5. 종료')
@@ -278,8 +317,8 @@ if user_id != '-1':
         #건강정보 출력
         if menu == 1:
             print('------------------------------------------')
-            total_query = f"""
-                As a medical expert, your task is to provide a comprehensive analysis of the patient’s health information, including important considerations based on the patient's medical conditions, lifestyle factors, and other relevant health data. Using the provided context, your goal is to:
+            act_query = f"""
+                As a medical expert, your task is to provide a comprehensive analysis of the patient’s health information, including important considerations based on the patient's age, gender, age group, medical conditions, lifestyle factors, and other relevant health data. Using the provided context, your goal is to:
     
                 Thoroughly analyze the patient's health status.
                 Identify key health issues and concerns that need to be addressed.
@@ -289,6 +328,16 @@ if user_id != '-1':
                 Do not include personal opinions, speculative advice, or unsupported claims in your responses. Your role is to deliver expert, evidence-based insights and safety guidelines tailored to the patient’s unique health needs.
                 PLEASE SPEAK KOREAN
                 --------
+            """
+
+            base_info = f"""
+                Patient's base info :
+                Age : {age}
+                Gender : {gender}
+                Age Range : {age_range}
+            """
+
+            condition_query = f"""
                 Patient's diabetes condition :
                 {dm_response}
                 Patient's heart disease condition :
@@ -298,6 +347,9 @@ if user_id != '-1':
                 Patient's cancer condition :
                 {cancer_response}
             """
+
+            total_query = act_query + base_info + condition_query
+
 
             total_prompt = ChatPromptTemplate.from_messages(
                 [
