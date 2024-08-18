@@ -19,6 +19,8 @@ from langchain.storage import LocalFileStore
 # from langchain.globals import set_llm_cache
 # from langchain_community.cache import InMemoryCache
 import logging
+import os
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 # 로거의 레벨을 WARNING 이상으로 설정 (INFO 메시지를 출력하지 않도록 함)
 logger = logging.getLogger('pikepdf')
@@ -188,7 +190,7 @@ def HD_response(patient_data):
     # HDdoc_loader_1 = PyPDFLoader("./data/docs/심부전_가이드라인.pdf")
     # HDdocs_1 = HDdoc_loader_1.load_and_split(text_splitter=splitter)
     #
-    # HDdoc_loader_2 = PyPDFLoader("./data/docs/심장질환_가이드라인.pdf")
+    # HDdoc_loader_2 = PyPDFLoader("./data/docs/심장_가이드라인.pdf")
     # HDdocs_2 = HDdoc_loader_2.load_and_split(text_splitter=splitter)
     #
     # HDdocs = HDdocs_1 + HDdocs_2
@@ -309,14 +311,19 @@ if user_id != '-1':
             print('------------------------------------------')
 
             system_message = f"""
-                As a medical expert, your task is to provide a comprehensive analysis of the patient’s health information, including important considerations based on the patient's age, gender, age group, medical conditions, lifestyle factors, and other relevant health data. Using the provided context, your goal is to:
-    
-                Thoroughly analyze the patient's health status.
-                Identify key health issues and concerns that need to be addressed.
-                Highlight important precautions and considerations for managing the patient's health to ensure safety and effectiveness.
-                Each observation and recommendation should be supported by clear explanations, referencing clinical guidelines or research when applicable. If there is insufficient information, acknowledge this and suggest a method for the patient to obtain the necessary details, such as consulting with a healthcare provider.
-    
-                Do not include personal opinions, speculative advice, or unsupported claims in your responses. Your role is to deliver expert, evidence-based insights and safety guidelines tailored to the patient’s unique health needs.
+                "As a medical expert, your task is to provide a comprehensive analysis of the patient’s health information, including important considerations based on the patient's age, gender, age group, medical conditions, lifestyle factors, and other relevant health data. Using the provided context, your goal is to:
+
+                1. Thoroughly analyze the patient's health status.
+
+                2. Identify key health issues and concerns that need to be addressed.
+
+                3. Highlight important precautions and considerations for managing the patient's health to ensure safety and effectiveness.
+
+                4. Each observation and recommendation should be supported by clear explanations, referencing clinical guidelines or research when applicable. If there is insufficient information, acknowledge this and suggest a method for the patient to obtain the necessary details, such as consulting with a healthcare provider.
+
+                5. Do not include personal opinions, speculative advice, or unsupported claims in your responses. Your role is to deliver expert, evidence-based insights and safety guidelines tailored to the patient’s unique health needs.
+
+                Please consider readability by ensuring that each sentence does not exceed 55 characters and the response is within 10 lines."
                 PLEASE SPEAK KOREAN
                 --------
             """
@@ -356,13 +363,17 @@ if user_id != '-1':
             exercise_retriever = exercise_vectorstore.as_retriever()
 
             system_message = """
-                As a medical expert, your task is to provide tailored exercise recommendations, including important precautions, based on the patient's medical conditions, fitness level, lifestyle factors, and other relevant health data.
-                Using the provided context, your goal is to:
-                Recommend appropriate exercises tailored to the patient's needs.
-                Highlight important precautions and considerations during exercise to ensure safety and effectiveness.
-                Each recommendation and precaution should be supported by clear explanations, referencing clinical guidelines or research when applicable. If there is insufficient information, acknowledge this and suggest a method for the patient to obtain the necessary details, such as consulting with a healthcare provider.
+                "As a medical expert, your task is to provide tailored exercise recommendations, including important precautions, based on the patient's medical conditions, fitness level, lifestyle factors, and other relevant health data. Using the provided context, your goal is to:
 
-                Do not include personal conclusion, opinions, speculative advice, or unsupported claims in your responses. Your role is to deliver expert, evidence-based exercise recommendations and safety guidelines tailored to the patient's unique health needs.
+                1. Recommend appropriate exercises tailored to the patient's needs.
+                
+                2. Highlight important precautions and considerations during exercise to ensure safety and effectiveness.
+                
+                3. Each recommendation and precaution should be supported by clear explanations, referencing clinical guidelines or research when applicable. If there is insufficient information, acknowledge this and suggest a method for the patient to obtain the necessary details, such as consulting with a healthcare provider.
+                
+                4. Do not include personal conclusions, opinions, speculative advice, or unsupported claims in your responses. Your role is to deliver expert, evidence-based exercise recommendations and safety guidelines tailored to the patient's unique health needs.
+                
+                Please consider readability by ensuring that each sentence does not exceed 55 characters and the response is within 10 lines."
                 PLEASE SPEAK KOREAN
                 --------
                 exercise document : 
@@ -409,15 +420,21 @@ if user_id != '-1':
             recipe_retriever = recipe_vectorstore.as_retriever()
 
             system_message = """
-                As a medical expert, your task is to provide tailored dietary recommendations based on the patient's medical conditions, nutritional needs, lifestyle factors, and other relevant health data. Using the provided context, your goal is to:
-
-                Comprehensively analyze the patient's condition as it relates to their dietary needs.
-                Recommend an appropriate diet plan specifically tailored to the patient's needs.
-                Highlight important dietary precautions and considerations, including foods to avoid and undesirable eating habits, to ensure safety and effectiveness.
-                Each recommendation and precaution should be supported by clear explanations, referencing clinical guidelines or research when applicable. If there is insufficient information, acknowledge this and suggest a method for the patient to obtain the necessary details, such as consulting with a healthcare provider or a registered dietitian.
-                Ensure that all information provided is strictly related to diet. Do not include any recommendations or advice related to exercise, lifestyle habits, or any other non-dietary factors.
-
-                Do not include personal opinions, speculative advice, or unsupported claims in your responses. Your role is to deliver expert, evidence-based dietary recommendations and safety guidelines tailored to the patient's unique health needs.
+                "As a medical expert, your task is to provide tailored dietary recommendations based on the patient's medical conditions, nutritional needs, lifestyle factors, and other relevant health data. Using the provided context, your goal is to:
+                
+                1. Comprehensively analyze the patient's condition as it relates to their dietary needs.
+                
+                2. Recommend an appropriate diet plan specifically tailored to the patient's needs.
+                
+                3. Highlight important dietary precautions and considerations, including foods to avoid and undesirable eating habits, to ensure safety and effectiveness.
+                
+                4. Each recommendation and precaution should be supported by clear explanations, referencing clinical guidelines or research when applicable. If there is insufficient information, acknowledge this and suggest a method for the patient to obtain the necessary details, such as consulting with a healthcare provider or a registered dietitian.
+                
+                5. Ensure that all information provided is strictly related to diet. Do not include any recommendations or advice related to exercise, lifestyle habits, or any other non-dietary factors.
+                
+                6. Do not include personal opinions, speculative advice, or unsupported claims in your responses. Your role is to deliver expert, evidence-based dietary recommendations and safety guidelines tailored to the patient's unique health needs.
+                
+                Please consider readability by ensuring that each sentence does not exceed 55 characters and the response is within 10 lines."
                 PLEASE SPEAK KOREAN
                 --------
                 recipe document : 
