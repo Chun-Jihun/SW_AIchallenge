@@ -20,6 +20,8 @@ from langchain.storage import LocalFileStore
 # from langchain_community.cache import InMemoryCache
 import logging
 import os
+from preprocess import preprocess
+
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 # 로거의 레벨을 WARNING 이상으로 설정 (INFO 메시지를 출력하지 않도록 함)
@@ -35,6 +37,9 @@ OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
 # SQLite Cache 초기화
 # set_llm_cache(InMemoryCache())
+
+#데이터 전처리코드 실행
+preprocess()
 
 #임베딩함수 초기화
 embedding_function = OpenAIEmbeddings()
@@ -146,7 +151,7 @@ def DM_response(patient_data):
             | StrOutputParser()
     )
 
-    print('당뇨 분석 중...')
+    print('질환 분석 중(1/4)...')
     response = final_chain.invoke(patient_data)
     return response
 
@@ -182,7 +187,7 @@ def HBP_response(patient_data):
             | StrOutputParser()
     )
 
-    print('고혈압 분석 중...')
+    print('질환 분석 중(2/4)...')
     response = final_chain.invoke(patient_data)
     return response
 
@@ -226,7 +231,7 @@ def HD_response(patient_data):
             | StrOutputParser()
     )
 
-    print('심장질환 분석 중...')
+    print('질환 분석 중(3/4)...')
     response = final_chain.invoke(patient_data)
     return response
 
@@ -262,7 +267,7 @@ def Cancer_response(patient_data):
             | StrOutputParser()
     )
 
-    print('암 분석 중...')
+    print('질환 분석 중(4/4)...')
     response = final_chain.invoke(patient_data)
     return response
 
@@ -278,7 +283,7 @@ user_id = input_user_id()
 
 
 #종료가 아니라면 기능 출력
-if user_id != '-1':
+if user_id != -1:
     menu = 4
     while(True):
         if menu == 4:
@@ -346,7 +351,6 @@ if user_id != '-1':
             print("종합 소견 출력 중...")
             total_response = total_chain.invoke({"patient_info": str(patient_data)})
             print(total_response)
-            print('------------------------------------------')
             first = False
 
         #추천운동 출력
@@ -405,7 +409,6 @@ if user_id != '-1':
             print("추천 운동 검색 중...")
             exercise_response = exercise_chain.invoke(str(patient_data))
             print(exercise_response)
-            print('------------------------------------------')
             first = False
 
         #식단관리방법 출력
@@ -466,7 +469,6 @@ if user_id != '-1':
             print('추천 식단 검색 중...')
             recipe_response = recipe_chain.invoke(str(patient_data))
             print(recipe_response)
-            print('------------------------------------------')
             first = False
 
         #환자ID재검색
