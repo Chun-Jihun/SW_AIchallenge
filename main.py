@@ -151,7 +151,7 @@ def DM_response(patient_data):
             | StrOutputParser()
     )
 
-    print('질환 분석 중(1/4)...')
+    print('환자 분석 중(1/4)...')
     response = final_chain.invoke(patient_data)
     return response
 
@@ -187,7 +187,7 @@ def HBP_response(patient_data):
             | StrOutputParser()
     )
 
-    print('질환 분석 중(2/4)...')
+    print('환자 분석 중(2/4)...')
     response = final_chain.invoke(patient_data)
     return response
 
@@ -231,7 +231,7 @@ def HD_response(patient_data):
             | StrOutputParser()
     )
 
-    print('질환 분석 중(3/4)...')
+    print('환자 분석 중(3/4)...')
     response = final_chain.invoke(patient_data)
     return response
 
@@ -267,7 +267,7 @@ def Cancer_response(patient_data):
             | StrOutputParser()
     )
 
-    print('질환 분석 중(4/4)...')
+    print('환자 분석 중(4/4)...')
     response = final_chain.invoke(patient_data)
     return response
 
