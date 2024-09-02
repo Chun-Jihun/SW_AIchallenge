@@ -1,4 +1,19 @@
 # SW_AIchallenge
+## 팀원
+팀장 [전지훈](https://github.com/Chun-Jihun)
+팀원 [서상혁](https://github.com/tiemhub)
+팀원 [이강혁](https://github.com/KH4901)
+팀원 [허홍준](https://github.com/HongJuneHu)
+
+## 목차
+1. [개요](#개요)
+2. [학습 데이터셋](#학습-데이터셋)
+3. [아키텍쳐](#아키텍쳐)
+4. [사용 패키지](#사용-패키지)
+5. [Prompt Engineering](#Prompt-Engineering)
+6. [사용법](#사용법)
+7. [출력 예시](#출력예시)
+   
 ## 개요
 ### 연세대학교 미래캠퍼스 디지털헬스케어사업단 생성 AI 챌린지
 고령 만성질환자(고혈압, 당뇨, 심장질환) 대상의 챗봇 서비스 개발
