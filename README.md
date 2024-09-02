@@ -16,4 +16,53 @@
 설문지에 대한 답변이 기록되어있다.
 
 ## 아키텍쳐
-![image](https://github.com/user-attachments/assets/0c2060e6-457b-40b4-bc71-fdaff08e5f20)
+![image](https://github.com/user-attachments/assets/7f69a2a6-5aee-4893-b7d3-592bf495c43b)
+
+## 사용 패키지
+### Langchain
+### RAG([Retrieval-Augmented Generation](https://arxiv.org/pdf/2005.11401))
+![image](https://github.com/user-attachments/assets/7f8aad9d-49ae-4cea-8be8-09c1eb9a8ee1)
+![image](https://github.com/user-attachments/assets/09665547-5abe-4be8-a2f4-2139665bda3b)
+#### 작동원리
+1. 도큐멘트 검색: 질문에 관련된 정보를 실시간으로 검색합니다.
+2. 텍스트 생성: 검색된 정보를 활용해 답변을 생성합니다.
+
+#### 장점
+- 높은 정확성: 검색된 정보를 활용해 더 정확하고 관련성 높은 답변을 제공합니다.
+- 파라메틱 메모리 한계 극복: LLM은 학습된 고정된 지식에 의존하지만, RAG는 외부 정보 검색을 통해 최신 정보와 지식을 반영함으로써 LLM의 고정된 지식 한계를 보완합니다.
+- 정보 기반 생성: 실시간으로 검색된 정보와 LLM의 지식을 결합해 신뢰성 있는 답변을 제공합니다.
+
+## Prompt Engineering
+![image](https://github.com/user-attachments/assets/a660488c-aeda-4422-a199-ecf098400644)
+
+## 사용법
+### installation
+```
+conda create -n medical_chat python=3.11
+pip install -r requirements.txt
+```
+### usage
+```
+python main.py
+```
+
+## 출력예시
+```
+환자의 건강 정보를 분석한 결과는 다음과 같습니다.
+
+1. 건강 상태 분석 :
+   - 환자는 64세 여성으로, 당뇨병 전단계와 고혈압이 우려됩니다. 체지방률이 증가하고 있으며, 운동 부족이 관찰됩니다.
+
+2. 주요 건강 문제 :
+   - 혈당 변동성이 크고, 당뇨병 전단계 가능성이 있습니다.
+   - 고혈압 약물 복용이 불규칙하여 혈압 조절이 불안정합니다.
+   - 체지방률이 높아 심혈관 질환 위험이 증가합니다.
+
+3. 건강 관리 주의사항 :
+   - 정기적인 혈당 및 혈압 측정을 권장합니다.
+   - 규칙적인 운동을 통해 체중과 체지방률을 관리해야 합니다.
+   - 고혈압 약물 복용을 지속적으로 관리하고, 의사와 상담이 필요합니다.
+
+이 정보를 바탕으로, 환자는 의료 제공자와 상담하여 추가적인 조치를 취하는 것이 중요합니다.
+```
+
