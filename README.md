@@ -1,9 +1,9 @@
 # SW_AIchallenge
-## 팀원
-팀장 [전지훈](https://github.com/Chun-Jihun)
-팀원 [서상혁](https://github.com/tiemhub)
-팀원 [이강혁](https://github.com/KH4901)
-팀원 [허홍준](https://github.com/HongJuneHu)
+## 팀 구성
+팀장 [전지훈](https://github.com/Chun-Jihun)   
+팀원 [서상혁](https://github.com/tiemhub)   
+팀원 [이강혁](https://github.com/KH4901)   
+팀원 [허홍준](https://github.com/HongJuneHu)   
 
 ## 목차
 1. [개요](#개요)
