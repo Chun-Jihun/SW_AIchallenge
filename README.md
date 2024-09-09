@@ -54,6 +54,9 @@
 ### installation
 ```
 conda create -n medical_chat python=3.11
+git clone https://github.com/Chun-Jihun/SW_AIchallenge.git
+conda activate medical_chat
+cd SW_AIchallenge
 pip install -r requirements.txt
 ```
 ### usage
