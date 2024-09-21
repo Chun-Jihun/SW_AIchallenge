@@ -1,4 +1,7 @@
 # SW_AIchallenge
+![image](https://github.com/user-attachments/assets/b8b60536-bb28-4612-8831-4fdd70991f73)
+
+
 ## 팀 구성
 **팀장** [전지훈](https://github.com/Chun-Jihun)   
 **팀원** [서상혁](https://github.com/tiemhub)   
